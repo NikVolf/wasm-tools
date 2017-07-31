@@ -1,0 +1,24 @@
+.AppHeader {
+  padding: 0 15px;
+  border-bottom: 5px solid #343436;
+  height: 50px;
+}
+
+.AppBody {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  background: #343436;
+  display: flex;
+}
+
+.AppExplorer {
+  background: #1d1f20;
+  flex: 0 0 350px;
+  border-right: 5px solid #343436;
+}
+
+.App {
+  background: #1d1f20;
+  flex: 1 1 0;
+}

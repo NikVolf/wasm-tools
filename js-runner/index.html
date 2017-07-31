@@ -199,66 +199,72 @@
       }
     }
     
-    function loadWebAssembly(filename, imports) {
-      return fetch(filename)
-        .then(response => response.arrayBuffer())
-        .then(buffer => WebAssembly.compile(buffer))
-        .then(module => {
-          imports = imports || {};
-          imports.env = imports.env || {};
-          var env = imports.env;
-          imports.env.memoryBase = imports.env.memoryBase || 1024;
-          imports.env.tableBase = imports.env.tableBase || 0;
+    function runWebAssembly(buffer,imports) {
+        imports = imports || {};
+        imports.env = imports.env || {};
+        var env = imports.env;
+        imports.env.memoryBase = imports.env.memoryBase || 1024;
+        imports.env.tableBase = imports.env.tableBase || 0;
 
-          window.runtime = new Runtime();
+        window.runtime = new Runtime();
 
-          env.STACKTOP = env.STACKTOP || 0;
-          env.STACK_MAX = env.STACK_MAX || 5*1024*1024;
-          env.DYNAMICTOP_PTR = env.STACK_MAX;
-          env.enlargeMemory = env.enlargeMemory || function() { 
-            return 1;
-          };
-          env.getTotalMemory = env.getTotalMemory || function() {
-              return 16 * 1024 * 1024;
-          };
-          env.abortOnCannotGrowMemory = env.abortOnCannotGrowMemory || function() { throw "abort growing memory"; };
-          env._abort = env._abort || function() { throw "_abort"; };
-          env.abort = env.abort || function() { throw "abort"; };
-          env.___setErrNo = env.___setErrNo || function() { throw "setting error no"; };
+        env.STACKTOP = env.STACKTOP || 0;
+        env.STACK_MAX = env.STACK_MAX || 5*1024*1024;
+        env.DYNAMICTOP_PTR = env.STACK_MAX;
+        env.enlargeMemory = env.enlargeMemory || function() { 
+          return 1;
+        };
+        env.getTotalMemory = env.getTotalMemory || function() {
+            return 16 * 1024 * 1024;
+        };
+        env.abortOnCannotGrowMemory = env.abortOnCannotGrowMemory || function() { throw "abort growing memory"; };
+        env._abort = env._abort || function() { throw "_abort"; };
+        env.abort = env.abort || function() { throw "abort"; };
+        env.___setErrNo = env.___setErrNo || function() { throw "setting error no"; };
 
-          // dead symbols in rust wasm32-unknown-emscripten target
-          // todo: strip/raise issue in rust compiler
-          env.invoke_vi = function() { throw "invoke_vi: unreachable!"; }
-          env.invoke_v = function() { throw "invoke_v: unreachable!"; }
+        // dead symbols in rust wasm32-unknown-emscripten target
+        // todo: strip/raise issue in rust compiler
+        env.invoke_vi = function() { throw "invoke_vi: unreachable!"; }
+        env.invoke_v = function() { throw "invoke_v: unreachable!"; }
+        env.alignfault = function () { throw "alignfault!"; }
+        env.abortStackOverflow = function () { throw "abortStackOverflow!"; }
+        env.segfault = function () { throw "segfault!"; }
+        env.ftfault = function () { throw "ftfault!"; }
 
-          // todo: also test unwind about those two
-          env._rust_begin_unwind = function() { throw "_rust_begin_unwind: unreachable!"; }
-          env._llvm_trap = function() { throw "_llvm_trap: unreachable!"; }
+        // todo: also test unwind about those two
+        env._rust_begin_unwind = function() { throw "_rust_begin_unwind: unreachable!"; }
+        env._llvm_trap = function() { throw "_llvm_trap: unreachable!"; }
 
-          env._emscripten_memcpy_big = function() { throw "_emscripten_memcpy_big: unreachable!"; }
-          env.___gxx_personality_v0 = function() { throw "___gxx_personality_v0: unreachable!"; }
-          env.___resumeException = function() { throw "___resumeException: unreachable!"; }
-          env.___cxa_find_matching_catch_2 = function() { throw "___cxa_find_matching_catch_2: unreachable!"; }
-          env.___gxx_personality_v0 = function() { throw "___gxx_personality_v0: unreachable!"; }
+        env._emscripten_memcpy_big = function() { throw "_emscripten_memcpy_big: unreachable!"; }
+        env.___gxx_personality_v0 = function() { throw "___gxx_personality_v0: unreachable!"; }
+        env.___resumeException = function() { throw "___resumeException: unreachable!"; }
+        env.___cxa_find_matching_catch_2 = function() { throw "___cxa_find_matching_catch_2: unreachable!"; }
+        env.___syscall6 = function () { throw "___syscall6: unreachable!"; }
+        env.___syscall140 = function () { throw "___syscall140: unreachable!"; }
+        env.___syscall54 = function () { throw "___syscall54: unreachable!"; }
+        env._llvm_trap = function () { throw "_llvm_trap: unreachable!"; }
+        env.___syscall146 = function () { throw "___syscall146: unreachable!"; }
+        env._debug = function (arg) { 
+          console.log("DEBUG", arg);
+        }
 
-          env.memoryBase = env.memoryBase || 0;
-          env.tableBase = env.tableBase || 0;
+        env.memoryBase = env.memoryBase || 0;
+        env.tableBase = env.tableBase || 0;
 
-          env._storage_read = runtime.storage.read;
-          env._storage_write = runtime.storage.write;
-          env._storage_size = runtime.storage.size;
-          env.gas = runtime.gas;
-          env._malloc = runtime.malloc;
-          env._free = runtime.free;
+        env._storage_read = runtime.storage.read;
+        env._storage_write = runtime.storage.write;
+        env._storage_size = runtime.storage.size;
+        env.gas = runtime.gas;
+        env._malloc = runtime.malloc;
+        env._free = runtime.free;
 
-          if (!imports.env.memory) {
-            imports.env.memory = runtime.memory;
-          }
-          if (!imports.env.table) {
-            imports.env.table = new WebAssembly.Table({ initial: 0, maximum: 0, element: 'anyfunc' });
-          }
-          return new WebAssembly.Instance(module, imports);
-        });
+        if (!imports.env.memory) {
+          imports.env.memory = runtime.memory;
+        }
+        if (!imports.env.table) {
+          imports.env.table = new WebAssembly.Table({ initial: 8, maximum: 8, element: 'anyfunc' });
+        }
+        return WebAssembly.instantiate(buffer, imports);
     }
 
     function strToArray(str) {
@@ -274,21 +280,33 @@
       return "[" + arr.join(", ") + "]";
     }
 
-    loadWebAssembly('out/contract.wasm')
-      .then(instance => {
-        var button = document.getElementById('do-call');
-        button.value = 'Execute call';
-        button.addEventListener('click', function() {
-          button.setAttribute("disabled", "1");
-          let args = strToArray(document.getElementById("context").value);
-          let result = runtime.call(instance, args);
-          document.getElementById("result").value = arrayToStr(result);
-          document.getElementById("storage").value = arrayToStr(runtime.storage.toArr());
-          document.getElementById("gas").innerHTML = "Gas used: <b>" + runtime.gasCounter + "</b>";
-          button.removeAttribute("disabled");
-        }, false);
+    function loadFile(e) {
+      let file = e.target.files[0];
+
+      if (file) {
+        let reader = new FileReader();
+        reader.onload = (e) => {
+          runWebAssembly(e.target.result).then(instance => {
+          var button = document.getElementById('do-call');
+          button.value = 'Execute call';
+          button.addEventListener('click', function() {
+            button.setAttribute("disabled", "1");
+            let args = strToArray(document.getElementById("context").value);
+            let result = runtime.call(instance.instance, args);
+            document.getElementById("result").value = arrayToStr(result);
+            document.getElementById("storage").value = arrayToStr(runtime.storage.toArr());
+            document.getElementById("gas").innerHTML = "Gas used: <b>" + runtime.gasCounter + "</b>";
+            button.removeAttribute("disabled");
+          }, false);}).catch((e) => console.log(e))
+          ;
+        };
+        reader.readAsArrayBuffer(file);
       }
-    );
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('file').addEventListener('change', loadFile, false);
+    });
 
   </script>
 </head>
@@ -315,6 +333,10 @@ pub fn call(descriptor: *mut u8) {
     <a href="https://github.com/NikVolf/wasm-tools/blob/master/samples/logger_contract.rs">Full source with preamble</a>
   </div>
 
+  <div>
+    <label for="wasm">Load WASM file</label>
+    <input type="file" id="file" name="file" />
+  </div>
   <div>
     <label for="context" style="display: block">Input</label>
     <textarea style="width: 480px; height: 96px; margin-bottom: 24px; resize: none" id="context">[10, 12, 16]</textarea>
