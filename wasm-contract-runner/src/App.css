@@ -1,6 +1,5 @@
 .AppHeader {
   padding: 0 15px;
-  border-bottom: 5px solid #343436;
   height: 50px;
 }
 
@@ -8,17 +7,22 @@
   position: absolute;
   height: 100%;
   width: 100%;
-  background: #343436;
   display: flex;
 }
 
 .AppExplorer {
-  background: #1d1f20;
-  flex: 0 0 350px;
-  border-right: 5px solid #343436;
+  flex: 0 0 250px;
+  padding: 15px;
+  border-right: 1px solid #8c8c8c;
 }
 
-.App {
-  background: #1d1f20;
+.AppRunner {
+  flex: 0 0 350px;
+  padding: 15px;
+  border-right: 1px solid #8c8c8c;
+}
+
+.AppOutput {
+  padding: 15px;
   flex: 1 1 0;
 }
