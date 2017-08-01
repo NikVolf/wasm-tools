@@ -2025,6 +2025,10 @@ detect-port-alt@1.1.3:
     address "^1.0.1"
     debug "^2.6.0"
 
+dexie@^2.0.0-beta:
+  version "2.0.0-beta.11"
+  resolved "https://registry.yarnpkg.com/dexie/-/dexie-2.0.0-beta.11.tgz#980dde73146b4c147af0f84165d3ad5be8e952dc"
+
 diff@^3.2.0:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/diff/-/diff-3.3.0.tgz#056695150d7aa93237ca7e378ac3b1682b7963b9"
