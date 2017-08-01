@@ -6,27 +6,25 @@ import Explorer from './sections/Explorer/Explorer';
 import Runner from './sections/Runner';
 import Output from './sections/Output';
 
-let db;
-
 class App extends React.Component {
 
   constructor(props, state) {
     super(props, state);
     this.loadWasmFiles = this.loadWasmFiles.bind(this);
-    this.saveFiles = this.saveFiles.bind(this);
+    this.db = null;
     this.state = {
       files: []
     };
   }
 
   componentWillMount() {
-    db = new Dexie("wasmFilesStore");
-    db.version(1).stores({ files: "name" });
-    db.open().then(() => db.files.toArray()).then((files) => this.setState({ files }));
+    this.db = new Dexie("wasmFilesStore");
+    this.db.version(1).stores({ files: "name" });
+    this.loadFiles();
   }
 
-  saveFiles() {
-
+  loadFiles() {
+    this.db.files.toArray().then((files) => this.setState({ files }))
   }
 
   loadWasmFiles(inputFiles) {
@@ -48,14 +46,7 @@ class App extends React.Component {
         reader.readAsArrayBuffer(file);
       }))
     Promise.all(promises).then((files) => {
-      console.log(files);
-      this.setState({ files });
-    });
-  }
-
-  saveWasmFiles(files) {
-    files.forEach((f) => {
-
+      this.db.files.bulkPut(files).then(() => this.loadFiles());
     });
   }
 
