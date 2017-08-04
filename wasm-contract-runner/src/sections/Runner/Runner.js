@@ -1,20 +1,35 @@
 import React from 'react';
 import styles from './Runner.css';
 
-import { Header, Form, Button, Divider } from 'semantic-ui-react';
+import { Header, Form, Button, Divider, Input } from 'semantic-ui-react';
 
 export default class Runner extends React.Component {
-  render() {
-    return <div className="Runner">
-        <Header as="h3">Run with params</Header>
-        <Divider />
-        <Form>
-            <Form.Input label="From:" placeholder="0x00000000000000000000..."/>
-            <Form.Input label="To:" placeholder="0x00000000000000000000..."/>
-            <Form.Input label="Value:"/>
-            <Form.Input label="Gas Limit:"/>
-            <Form.Input label="Data:"/>
-        </Form>
-    </div>
-  }
+
+    constructor(...args) {
+        super(...args);
+        this.state = {
+            address: "",
+            sender: "",
+            origin: "",
+            value: "",
+            data: "",
+        }
+    }
+
+    handleChange = ({ target }) => {
+        const { name, value } = target;
+        this.setState({[name]: value});
+    }
+
+    render() {
+        const { selectedFile, onSubmit } = this.props;
+        return <div className="Runner" >
+            <Form>
+                <Form.Input name="address" label="Address" onChange={ this.handleChange } />
+                <Form.Input name="sender" label="Sender" onChange={ this.handleChange } />
+                <Form.Input name="origin" label="Origin" onChange={ this.handleChange } />
+                <Form.Button color="orange" fluid onClick={ () => onSubmit(this.state) }>Run</Form.Button>
+            </Form>
+        </div>
+    }
 }

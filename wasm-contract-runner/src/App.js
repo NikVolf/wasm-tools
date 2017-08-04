@@ -6,28 +6,39 @@ import Explorer from './sections/Explorer/Explorer';
 import Runner from './sections/Runner';
 import Output from './sections/Output';
 
+import runWasm from './common/wasm/runWasm';
+import Runtime from './common/wasm/Runtime';
+import parseArgs from './common/parseArgs';
+
+
 class App extends React.Component {
 
   constructor(props, state) {
     super(props, state);
-    this.loadWasmFiles = this.loadWasmFiles.bind(this);
     this.db = null;
     this.state = {
-      files: []
+      files: [],
+      selected: "",
+      args: {},
+      result: null,
     };
   }
 
-  componentWillMount() {
+  getSelectedFile = () => {
+    return this.state.files.find(({ name }) => name === this.state.selected);
+  }
+
+  componentWillMount = () => {
     this.db = new Dexie("wasmFilesStore");
     this.db.version(1).stores({ files: "name" });
     this.loadFiles();
   }
 
-  loadFiles() {
+  loadFiles = () => {
     this.db.files.toArray().then((files) => this.setState({ files }))
   }
 
-  loadWasmFiles(inputFiles) {
+  loadWasmFiles = (inputFiles) => {
     const promises = inputFiles.map((file) =>
       new Promise((res, rej) => {
         const reader = new FileReader();
@@ -50,8 +61,18 @@ class App extends React.Component {
     });
   }
 
+  
+  run = (args) => {
+    const buffer = this.getSelectedFile().data;
+    const runtime = new Runtime();
+    runWasm(buffer, runtime).then((instance) => {
+      const result = runtime.call(instance.instance, parseArgs(args));
+      this.setState({ result });
+    });
+  }
+
   render() {
-    console.log(console.log(this.state.files));
+    const selectedFile = this.getSelectedFile();
     return (
         <div>
           <div className="AppHeader">
@@ -61,13 +82,18 @@ class App extends React.Component {
           </div>
           <div className="AppBody">
             <div className="AppExplorer">
-              <Explorer files={ this.state.files } loadWasmFiles={ this.loadWasmFiles } />
+              <Explorer 
+                files={ this.state.files }
+                onSelect= { (selected) => this.setState({ selected })}
+                selected= { this.state.selected }
+                onLoadWasmFiles={ this.loadWasmFiles }
+                 />
             </div>
             <div className="AppRunner">
-              <Runner />
+              { selectedFile && <Runner selectedFile={ selectedFile } onSubmit={ (args) => this.run(args) } />}
             </div>
             <div className="AppOutput">
-              <Output />
+              <Output result={ this.state.result } />
             </div>
         </div>
       </div>

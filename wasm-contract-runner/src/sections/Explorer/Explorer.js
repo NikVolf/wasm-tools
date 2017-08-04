@@ -1,37 +1,69 @@
-import React from 'react';
-import styles from './Explorer.css';
-import { Icon, Header, Divider, Segment, Button, List } from 'semantic-ui-react';
+import React from "react";
+import PropTypes from "prop-types";
+import styles from "./Explorer.css";
+import { Icon, Header, Divider, Button, List } from "semantic-ui-react";
 
-import Dropzone from 'react-dropzone';
+import Dropzone from "react-dropzone";
 
 export default class Explorer extends React.Component {
+  static propTypes = {
+    onLoadWasmFiles: PropTypes.func,
+    onSelect: PropTypes.func,
+    files: PropTypes.arrayOf(
+      PropTypes.shape({
+        name: PropTypes.string,
+        data: PropTypes.instanceOf(ArrayBuffer)
+      })
+    ),
+    selected: PropTypes.string
+  };
 
   renderFiles() {
-    const { files } = this.props;
+    const { files, onSelect, selected } = this.props;
     const list = files.map(file =>
-        <List.Item key={file.name}>
-          <List.Content>
-            <List.Header>{ file.name }</List.Header>
-          </List.Content>
-        </List.Item>
+      <List.Item
+        active={selected === file.name}
+        onClick={() => onSelect(file.name)}
+        key={file.name}
+      >
+        <List.Content>
+          <List.Header>
+            {file.name}
+          </List.Header>
+          <List.Description>
+            {file.data.byteLength} bytes
+          </List.Description>
+        </List.Content>
+      </List.Item>
     );
-    return <List selection verticalAlign='middle'>{list}</List>
+    return (
+      <List celled selection verticalAlign="middle">
+        {list}
+      </List>
+    );
   }
 
   render() {
-    const { 
-      loadWasmFiles,
-    } = this.props;
+    const { onLoadWasmFiles } = this.props;
 
-    return <div>
-      <Header as="h3">Uploaded contracts</Header>
-      <Divider />
-      <Button onClick={ () => this.dropzoneRef.open() } fluid color="green">
-        <Icon name="plus" /> Upload WASM files</Button>
-      <Dropzone style={{}} disableClick={ true } disablePreview ref={ (dropzoneRef) => this.dropzoneRef = dropzoneRef }
-                onDrop={ (accepted) => loadWasmFiles(accepted) }>
-        { this.renderFiles() }
-      </Dropzone>
+    return (
+      <div>
+        <Dropzone
+          onDrop={accepted => onLoadWasmFiles(accepted)}
+          ref={dropzoneRef => (this.dropzoneRef = dropzoneRef)}
+          style={{}}
+          disableClick={true}
+          disablePreview
+        >
+          <Header as="h3">Uploaded contracts</Header>
+          <Divider />
+          <Button onClick={() => this.dropzoneRef.open()} fluid color="gray">
+            <Icon name="plus" /> Upload WASM files
+          </Button>
+
+          {this.renderFiles()}
+        </Dropzone>
       </div>
+    );
   }
 }
