@@ -95,8 +95,14 @@ export default function createEnv(runtime, imports) {
     env.___syscall146 = function() {
         throw "___syscall146: unreachable!";
     };
-    env._debug = function(arg) {
-        console.log("DEBUG", arg);
+
+    env._debug = function(ptr, len) {
+        let arr = new Uint8Array(runtime.memory.buffer);
+        let str = "";
+        for (let i = 0; i < len; i++) {
+            str += String.fromCharCode(arr[ptr + i]);
+        }
+        console.log("DEBUG", str);
     };
 
     env.memoryBase = env.memoryBase || 0;
@@ -114,8 +120,8 @@ export default function createEnv(runtime, imports) {
     }
     if (!imports.env.table) {
         imports.env.table = new window.WebAssembly.Table({
-            initial: 10,
-            maximum: 10,
+            initial: 8,
+            maximum: 8,
             element: "anyfunc"
         });
     }
