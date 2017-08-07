@@ -120,8 +120,8 @@ export default function createEnv(runtime, imports) {
     }
     if (!imports.env.table) {
         imports.env.table = new window.WebAssembly.Table({
-            initial: 8,
-            maximum: 8,
+            initial: 6,
+            maximum: 6,
             element: "anyfunc"
         });
     }

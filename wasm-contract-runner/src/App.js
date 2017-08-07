@@ -66,8 +66,11 @@ class App extends React.Component {
     const buffer = this.getSelectedFile().data;
     const runtime = new Runtime();
     runWasm(buffer, runtime).then((instance) => {
+      const module = instance.module;
       const result = runtime.call(instance.instance, parseArgs(args));
       this.setState({ result });
+      let str = runtime.storage.read('')
+      console.log(runtime.storage.toArray())
     });
   }
 

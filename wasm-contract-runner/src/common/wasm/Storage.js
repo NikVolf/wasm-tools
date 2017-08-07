@@ -1,56 +1,55 @@
-export default function Storage(memoryBuf) {
-    var self = this;
-    self.size = 16 * 1024;
-    self.buffer = new ArrayBuffer(self.size);
-    self.memory = memoryBuf;
-    self.total = 0;
+function bytesToHex(bytes) {
+    return bytes.map((b) => ("00" + b.toString(16).slice(-2))).join("");
+}
 
-    self.write = function(offset, len, ptr) {
-        var oldSize = false;
-        while (offset + len > self.size) {
-            oldSize || (oldSize = self.size);
-            self.size = self.size * 2;
-        }
-        if (oldSize) {
-            self.buffer = ArrayBuffer.transfer(self.buffer, self.size);
-        }
+function hexToBytes(hex) {
+    let len = hex.length;
+    let res = [];
+    for(let i = 0; i < len; i += 2) {
+        let byte = parseInt(hex.slice(i, i + 2), 16);
+        res.push(byte);
+    }
+    return res;
+}
 
-        if (offset + len > self.total) {
-            self.total = offset + len;
-        }
+function readU8(ptr, buffer, len) {
+    const view = new DataView(buffer);
+    const res = [];
+    for(let i = 0; i < len; i++) {
+        res.push(view.getUint8(ptr + i));
+    }
+    return res;
+}
 
-        let memView = new DataView(self.memory);
-        let storageView = new DataView(self.buffer);
-        for (let i = 0; i < len; i++) {
-            storageView.setInt8(offset + i, memView.getInt8(ptr + i));
-        }
-        return len;
-    };
+function writeU8(ptr, buffer, value) {
+    const view = new DataView(buffer);
+    for(let i = 0; i < value.len; i++) {
+        view.setUint8(ptr + i, value[i]);
+    }
+}
 
-    self.read = function(offset, len, ptr) {
-        if (offset + len > self.total) {
+export default class Storage {
+
+    constructor(buffer) {
+        this.size = 16 * 1024;
+        this.buffer = buffer;
+        this.store = Map();
+    }
+    
+    write = (keyPtr, valPtr) => {
+        const key = readU8(keyPtr, this.buffer, 32);
+        const value = readU8(valPtr, this.buffer, 32);
+        this.store.set(bytesToHex(key), value);
+        return 0;
+    }
+
+    read = (keyPtr, destPtr) => {
+        const key = readU8(keyPtr, this.buffer, 32);
+        const value = this.store.get(bytesToHex(key));
+        if (value) {
             return -1;
         }
-
-        let memView = new DataView(self.memory);
-        let storageView = new DataView(self.buffer);
-
-        for (var i = 0; i < len; i++) {
-            memView.setInt8(ptr + i, storageView.getInt8(offset + i));
-        }
+        writeU8(destPtr, value);
         return len;
-    };
-
-    self.size = function() {
-        return self.total;
-    };
-
-    self.toArr = function() {
-        let result = [];
-        let dataView = new DataView(self.buffer);
-        for (var i = 0; i < self.total; i++) {
-            result.push(dataView.getUint8(i));
-        }
-        return result;
-    };
+    }
 }
